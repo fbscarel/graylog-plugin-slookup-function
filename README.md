@@ -1,3 +1,5 @@
+This is a fork of https://github.com/billmurrin/graylog-plugin-slookup-function by Bill Murrin.
+
 [![Github Downloads](https://img.shields.io/github/downloads/billmurrin/graylog-plugin-slookup-function/total.svg)](https://github.com/billmurrin/graylog-plugin-slookup-function/releases)
 [![GitHub Release](https://img.shields.io/github/release/billmurrin/graylog-plugin-slookup-function.svg)](https://github.com/billmurrin/graylog-plugin-slookup-function/releases)
 [![Build Status](https://travis-ci.org/billmurrin/graylog-plugin-slookup-function.svg?branch=master)](https://travis-ci.org/billmurrin/graylog-plugin-slookup-function)
