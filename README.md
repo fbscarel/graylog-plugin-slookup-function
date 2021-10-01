@@ -17,6 +17,8 @@ With features like index sets being introduced in Graylog 2.x, it is possible to
 
 **Version 2.0.0 tested to work with Graylog 2.3.2 and 2.4.0**
 
+**Version 4.1.0 tested to work with Graylog 4.1.0 only**
+
 Function Breakdown
 ---
 
