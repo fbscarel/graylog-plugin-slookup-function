@@ -77,19 +77,21 @@ public class StreamLookupFunction extends AbstractFunction<List> {
     }
 
     @Override
-    public List<String> evaluate(FunctionArgs functionArgs, EvaluationContext evaluationContext) {
+    public ArrayList<ArrayList<String>> evaluate(FunctionArgs functionArgs, EvaluationContext evaluationContext) {
         String stream = streamParam.required(functionArgs, evaluationContext);
         String srcField = srcFieldParam.required(functionArgs, evaluationContext);
         String dstField = dstFieldParam.required(functionArgs, evaluationContext);
         List<String> rtnFields = (List<String>) rtnFieldsParam.required(functionArgs, evaluationContext);
         Integer timeRange = Integer.parseInt(timeRangeParam.required(functionArgs, evaluationContext));
         String sortField = sortOrderParam.required(functionArgs, evaluationContext);
-        List<String> resultList = new ArrayList<String>();
-        List<String> blankList = new ArrayList<String>();
+        ArrayList<ArrayList<String>> outerResultList = new ArrayList<ArrayList<String>>();
+        ArrayList<ArrayList<String>> blankList = new ArrayList<ArrayList<String>>();
+        ArrayList<String> resultList = new ArrayList<String>();
 
         for (String rtnfl : rtnFields) {
-            blankList.add("No match found");
+            resultList.add("No match found");
         }
+        blankList.add(resultList);
 
         //this.timeRange = RelativeRange.builder().type("relative").range(timeRange).build();
 	//this was changed in Graylog 4.1 to include an optional from/to instead of just range
@@ -126,7 +128,7 @@ public class StreamLookupFunction extends AbstractFunction<List> {
                 .fields(rtnFields)
                 .range(this.timeRange)
                 .sorting(this.sortType)
-                .limit(1)
+                .limit(100)
                 .offset(0)
                 .build();
 
@@ -145,35 +147,40 @@ public class StreamLookupFunction extends AbstractFunction<List> {
                     List<ResultMessage> resultMessages = response.getResults();
                     try {
                         //Map<String, Object> resultFields = resultMessages.get(0).getMessage().getFields();
-                        Message msg = resultMessages.get(0).getMessage();
-                        if (msg.getFields().size() > 0) {
-                            for(String rtnField : rtnFields) {
-                                try {
-                                    LOG.debug("Current return field: {}", rtnField);
-                                    String returnStrField = String.valueOf(msg.getField(rtnField));
-                                    if (!returnStrField.isEmpty()) {
-                                        LOG.debug("Field: {}, Value: {}", rtnField, returnStrField);
-                                        resultList.add(returnStrField);
-                                        LOG.debug("Added value to resultList");
-                                    } else {
-                                        LOG.debug("Return field is empty");
+                        int resultMessageSize = resultMessages.size();
+                        for (int i = 0; i < resultMessageSize; i++) {
+                            resultList.clear();
+                            Message msg = resultMessages.get(i).getMessage();
+                            if (msg.getFields().size() > 0) {
+                                for(String rtnField : rtnFields) {
+                                    try {
+                                        LOG.debug("Current return field: {}", rtnField);
+                                        String returnStrField = String.valueOf(msg.getField(rtnField));
+                                        if (!returnStrField.isEmpty()) {
+                                            LOG.debug("Field: {}, Value: {}", rtnField, returnStrField);
+                                            resultList.add(returnStrField);
+                                            LOG.debug("Added value to resultList");
+                                        } else {
+                                            LOG.debug("Return field is empty");
+                                        }
+                                    } catch(Exception e) {
+                                        LOG.debug("Unable to retrieve field value: {} for field {}", e.getMessage(), rtnField);
+                                        resultList.add("No match found");
                                     }
-                                } catch(Exception e) {
-                                    LOG.debug("Unable to retrieve field value: {} for field {}", e.getMessage(), rtnField);
-                                    resultList.add("No match found");
                                 }
                             }
-                        }
 
-                        if (resultList.isEmpty()) {
-                            LOG.debug("Return List is empty. Exiting");
-                            return blankList;
+                            if (resultList.isEmpty()) {
+                                LOG.debug("Return List is empty. Exiting");
+                                return blankList;
+                            }
+                            else
+                            {
+                                LOG.debug("Return List not empty. The return field(s) are {}, the values is {}", rtnFields.toString(), resultList.toString());
+                                outerResultList.add(resultList);
+                            }
                         }
-                        else
-                        {
-                            LOG.debug("Return List not empty. The return field(s) are {}, the values is {}", rtnFields.toString(), resultList.toString());
-                            return resultList;
-                        }
+                        return outerResultList;
 
                     } catch(Exception e) {
                         LOG.debug("Error retrieving message: {} {}", e.getMessage(), e.toString());
